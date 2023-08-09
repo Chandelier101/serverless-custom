@@ -30,7 +30,7 @@ def init():
                                                  torch_dtype=torch.bfloat16,
                                                  quantization_config=bnb_config,
                                                  use_cache = "cache",
-                                                 low_cpu_mem_usage=True).to(device)
+                                                 low_cpu_mem_usage=True)
     model = PeftModel.from_pretrained(model, tuned_adapter)
     # context = {"model":model,"tokenizer":tokenizer}
     
@@ -57,7 +57,7 @@ def handler(context: dict, request: Request) -> Response:
     model = context.get("model")
 
     inputs = tokenizer.encode(prompt, return_tensors="pt").to("cuda")
-    outputs = model.generate(inputs, max_new_tokens=int(max_new_tokens))
+    outputs = model.generate(inputs['input_ids'], max_new_tokens=int(max_new_tokens))
     output = tokenizer.decode(outputs[0])
 
     return Response(
