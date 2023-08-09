@@ -62,10 +62,10 @@ def handler(context: dict, request: Request) -> Response:
     # print(context)
     
     inputs = tokenizer.encode(prompt, return_tensors="pt")
-    # print(inputs.shape)
+    print(inputs.shape)
     print(inputs)
-    print("Keys:",inputs['input_ids'])
-    outputs = model.generate(inputs['input_ids'].to(device), max_new_tokens=int(max_new_tokens))
+    print("Keys:",inputs[0])
+    outputs = model.generate(inputs[0].to(device), max_new_tokens=int(max_new_tokens))
     output = tokenizer.decode(outputs[0])
 
     return Response(
