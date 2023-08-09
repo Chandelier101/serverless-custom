@@ -4,7 +4,7 @@ from peft import PeftModel, PeftConfig
 from potassium import Potassium, Request, Response
 
 device = "cuda:0" if torch.cuda.is_available() else "cpu"
-print(device)
+
 # Init is ran on server startup
 # Load your model to GPU as a global variable here.
 app = Potassium("my_app")
@@ -12,6 +12,9 @@ app = Potassium("my_app")
 # @app.init runs at startup, and loads models into the app's context
 @app.init
 def init():
+
+    global model
+    global tokenizer
     print("loading to CPU...")
     base_model = "TinyPixel/Llama-2-7B-bf16-sharded"
     tuned_adapter = "newronai/llama-2-7b-QLoRA-Trial1"
@@ -27,7 +30,7 @@ def init():
                                                  torch_dtype=torch.bfloat16,
                                                  quantization_config=bnb_config,
                                                  use_cache = "cache",
-                                                 low_cpu_mem_usage=True)
+                                                 low_cpu_mem_usage=True).to(device)
     model = PeftModel.from_pretrained(model, tuned_adapter)
     # context = {"model":model,"tokenizer":tokenizer}
     
@@ -35,19 +38,15 @@ def init():
     print("done")
 
     # conditionally load to GPU
-    # if device == "cuda:0":
-    #     print("loading to GPU...")
-    #     model.cuda()
-    #     print("done")
+    if device == "cuda:0":
+        print("loading to GPU...")
+        model.cuda()
+        print("done")
 
     # tokenizer = GPT2Tokenizer.from_pretrained("EleutherAI/gpt-j-6B")
     tokenizer = AutoTokenizer.from_pretrained(base_model, use_cache="cache")
     tokenizer.pad_token = tokenizer.eos_token
-    context = {
-        "model": model,
-        "tokenizer": tokenizer
-    }
-    return context
+
 
 @app.handler("/")
 def handler(context: dict, request: Request) -> Response:
@@ -57,9 +56,8 @@ def handler(context: dict, request: Request) -> Response:
     tokenizer = context.get("tokenizer")
     model = context.get("model")
 
-    inputs = tokenizer.encode(prompt, return_tensors="pt").to(device)
-    print(type(inputs['input_ids']))
-    outputs = model.generate(inputs['input_ids'], max_new_tokens=50)
+    inputs = tokenizer.encode(prompt, return_tensors="pt").to("cuda")
+    outputs = model.generate(inputs, max_new_tokens=int(max_new_tokens))
     output = tokenizer.decode(outputs[0])
 
     return Response(
