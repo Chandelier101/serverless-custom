@@ -56,11 +56,13 @@ def init():
 def handler(context: dict, request: Request) -> Response:
     prompt = request.json.get("prompt")
     max_new_tokens = request.json.get("max_new_tokens")
-
+    print(prompt[0])
     tokenizer = context.get("tokenizer")
     model = context.get("model")
-
+    print(context)
+    
     inputs = tokenizer.encode(prompt, return_tensors="pt").to("cuda")
+    print("Keys:",inputs.keys())
     outputs = model.generate(inputs['input_ids'], max_new_tokens=int(max_new_tokens))
     output = tokenizer.decode(outputs[0])
 
