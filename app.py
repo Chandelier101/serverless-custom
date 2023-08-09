@@ -46,7 +46,11 @@ def init():
     # tokenizer = GPT2Tokenizer.from_pretrained("EleutherAI/gpt-j-6B")
     tokenizer = AutoTokenizer.from_pretrained(base_model, use_cache="cache")
     tokenizer.pad_token = tokenizer.eos_token
-
+    context = {
+        "model": model,
+        "tokenizer": tokenizer
+    }
+    return context
 
 @app.handler("/")
 def handler(context: dict, request: Request) -> Response:
